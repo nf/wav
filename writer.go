@@ -11,11 +11,6 @@ type File struct {
 	SampleRate uint32
 	SignificantBits uint16
 	Channels uint16
-	b bytes.Buffer
-}
-
-func (f *File) Write(b []byte) (int, os.Error) {
-	return f.b.Write(b)
 }
 
 func (f *File) WriteData(w io.Writer, data []byte) (err os.Error) {
@@ -24,16 +19,17 @@ func (f *File) WriteData(w io.Writer, data []byte) (err os.Error) {
 			err = e
 		}
 	}()
-	writeFmt(f)
-	writeChunk(&f.b, "data", data)
+	var buf bytes.Buffer
+	writeFmt(&buf, f)
+	writeChunk(&buf, "data", data)
 	write(w, []byte("RIFF"))
-	write(w, uint32(f.b.Len()))
+	write(w, uint32(buf.Len()))
 	write(w, []byte("WAVE"))
-	write(w, f.b.Bytes())
+	write(w, buf.Bytes())
 	return
 }
 
-func writeFmt(f *File) (err os.Error) {
+func writeFmt(w io.Writer, f *File) (err os.Error) {
 	var b bytes.Buffer
 	write(&b, uint16(1)) // uncompressed/PCM
 	write(&b, f.Channels)
@@ -42,7 +38,7 @@ func writeFmt(f *File) (err os.Error) {
 	write(&b, f.SignificantBits / 8 * f.Channels) // block align
 	write(&b, f.SignificantBits)
 	write(&b, uint16(0)) // extra format bytes
-	return writeChunk(&f.b, "fmt ", b.Bytes())
+	return writeChunk(w, "fmt ", b.Bytes())
 }
 
 func writeChunk(w io.Writer, id string, data []byte) (err os.Error) {
