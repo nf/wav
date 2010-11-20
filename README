@@ -1,0 +1,5 @@
+wav, a WAVE file writer for Go
+
+This is the bare minimum I need to write uncompressed WAVE files. 
+Nothing fancy to see here.
+
