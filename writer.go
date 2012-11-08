@@ -3,19 +3,19 @@ package wav
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
-	"os"
 )
 
 type File struct {
-	SampleRate uint32
+	SampleRate      uint32
 	SignificantBits uint16
-	Channels uint16
+	Channels        uint16
 }
 
-func (f *File) WriteData(w io.Writer, data []byte) (err os.Error) {
+func (f *File) WriteData(w io.Writer, data []byte) (err error) {
 	defer func() {
-		if e, ok := recover().(os.Error); ok {
+		if e, ok := recover().(error); ok {
 			err = e
 		}
 	}()
@@ -29,21 +29,21 @@ func (f *File) WriteData(w io.Writer, data []byte) (err os.Error) {
 	return
 }
 
-func writeFmt(w io.Writer, f *File) (err os.Error) {
+func writeFmt(w io.Writer, f *File) (err error) {
 	var b bytes.Buffer
 	write(&b, uint16(1)) // uncompressed/PCM
 	write(&b, f.Channels)
 	write(&b, f.SampleRate)
 	write(&b, f.SampleRate*uint32(f.SignificantBits)) // bytes per second
-	write(&b, f.SignificantBits / 8 * f.Channels) // block align
+	write(&b, f.SignificantBits/8*f.Channels)         // block align
 	write(&b, f.SignificantBits)
 	write(&b, uint16(0)) // extra format bytes
 	return writeChunk(w, "fmt ", b.Bytes())
 }
 
-func writeChunk(w io.Writer, id string, data []byte) (err os.Error) {
+func writeChunk(w io.Writer, id string, data []byte) (err error) {
 	if len(id) != 4 {
-		panic(os.NewError("invalid chunk id"))
+		panic(errors.New("invalid chunk id"))
 	}
 	write(w, []byte(id))
 	write(w, uint32(len(data)))
