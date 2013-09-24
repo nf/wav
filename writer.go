@@ -34,10 +34,9 @@ func writeFmt(w io.Writer, f *File) (err error) {
 	write(&b, uint16(1)) // uncompressed/PCM
 	write(&b, f.Channels)
 	write(&b, f.SampleRate)
-	write(&b, f.SampleRate*uint32(f.SignificantBits)) // bytes per second
+	write(&b, uint32(f.Channels)*f.SampleRate*uint32(f.SignificantBits)/8) // bytes per second
 	write(&b, f.SignificantBits/8*f.Channels)         // block align
 	write(&b, f.SignificantBits)
-	write(&b, uint16(0)) // extra format bytes
 	return writeChunk(w, "fmt ", b.Bytes())
 }
 
